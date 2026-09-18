@@ -11,6 +11,8 @@ const API_BASE = window.location.origin.includes(':5173')
   ? 'http://localhost:8000/api'
   : '/api';
 
+const isCloud = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+
 const TABS = [
   { id: 'unificado',     label: '📊 Metálicos Total',        icon: Layers },
   { id: 'falta_geral',   label: '🚨 Metálicos Total Falta',  icon: AlertTriangle, color: '#f87171' },
@@ -425,7 +427,7 @@ export default function App() {
 
   // Auto-refresh every 5 min (silent)
   useEffect(() => {
-    if (!autoRefresh) return;
+    if (!autoRefresh || isCloud) return;
     const interval = setInterval(async () => {
       try {
         await fetch(`${API_BASE}/sync`, { method: 'POST' });
@@ -439,17 +441,38 @@ export default function App() {
     return () => clearInterval(interval);
   }, [autoRefresh, activeTab, selectedProjetos, appliedBusca]);
 
+  const handleReloadData = async () => {
+    setIsSyncing(true);
+    try {
+      await Promise.all([
+        fetchStatus(),
+        fetchSummary(),
+        fetchProjetos(),
+        fetchFornecedores(),
+        fetchDiagnosticoDetalhado()
+      ]);
+      if (activeTab !== 'diagnostico' && activeTab !== 'pintura') await fetchItems();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const handleSync = async () => {
+    if (isCloud) {
+      return handleReloadData();
+    }
     setIsSyncing(true);
     setSyncFeedback(null);
     try {
       const r    = await fetch(`${API_BASE}/sync`, { method: 'POST' });
       const data = await r.json();
       setSyncFeedback({
-        type: data.atualizad? 'success' : 'info',
+        type: data.atualizado ? 'success' : 'info',
         msg:  data.atualizado
-          ? `✅ Sincronizadààs ${data.ultima_atualizacao}`
-          : `ℹ️ Dados já estãatualizados.`
+          ? `✅ Sincronizado às ${data.ultima_atualizacao}`
+          : `ℹ️ Dados já estão atualizados.`
       });
       fetchStatus(); fetchSummary(); fetchProjetos(); fetchFornecedores(); fetchDiagnosticoDetalhado();
       if (activeTab !== 'diagnostico' && activeTab !== 'pintura') fetchItems();
@@ -610,29 +633,36 @@ export default function App() {
             <div className={`badge badge-${syncFeedback.type}`}>{syncFeedback.msg}</div>
           )}
 
-          {/* Auto-refresh toggle */}
-          <label className="auto-refresh-toggle" title="Sincronizar automaticamente a cada 5 minutos">
-            <input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} />
-            <span className="toggle-track"><span className="toggle-thumb" /></span>
-            <Zap size={13} style={{ color: autoRefresh ? '#fbbf24' : '#64748b' }} />
-            <span style={{ fontSize: '0.75rem', color: autoRefresh ? '#fbbf24' : '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>
-              Auto-sync
-            </span>
-          </label>
+          {!isCloud && (
+            <label className="auto-refresh-toggle" title="Sincronizar automaticamente a cada 5 minutos">
+              <input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} />
+              <span className="toggle-track"><span className="toggle-thumb" /></span>
+              <Zap size={13} style={{ color: autoRefresh ? '#fbbf24' : '#64748b' }} />
+              <span style={{ fontSize: '0.75rem', color: autoRefresh ? '#fbbf24' : '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                Auto-sync
+              </span>
+            </label>
+          )}
 
-          <div className="status-indicator">
+          <div className="status-indicator" title="Data e hora da última sincronização das planilhas">
             <span className="status-dot" />
-            <span>{status.ultima_atualizacao}</span>
+            <span>Atualizado em: {status.ultima_atualizacao || 'Hoje'}</span>
           </div>
 
-          <button className="btn btn-secondary btn-icon" onClick={() => window.print()} title="Imprimir / Salvar comPDF">
+          <button className="btn btn-secondary btn-icon" onClick={() => window.print()} title="Imprimir / Salvar como PDF">
             <Printer size={15} />
           </button>
 
-          <button className="btn btn-primary" onClick={handleSync} disabled={isSyncing} title="Lê as planilhas dOneDrive e Drive G: agora">
-            <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
-            <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar'}</span>
-          </button>
+          {isCloud ? (
+            <button className="btn btn-secondary btn-icon" onClick={handleReloadData} disabled={isSyncing} title="Recarregar dados da nuvem">
+              <RefreshCw size={15} className={isSyncing ? 'animate-spin' : ''} />
+            </button>
+          ) : (
+            <button className="btn btn-primary" onClick={handleSync} disabled={isSyncing} title="Lê as planilhas do OneDrive e Drive G: agora">
+              <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
+              <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar'}</span>
+            </button>
+          )}
         </div>
       </header>
 

@@ -12,7 +12,7 @@ if BASE_DIR not in sys.path:
 from backend.data_manager import data_engine, carregar_meta
 
 SUPABASE_URL = "https://oczagzgosnsprogxymtb.supabase.co"
-SUPABASE_KEY = "sb_secret_u0l3y_IgQBlVVMkDiYt8aQ_gPVo4HF0"
+SUPABASE_KEY = "sb_publishable_Bih4uz9Nlb_mpaAbY3OqCQ_sIMQ8B4l"
 
 HEADERS = {
     "apikey": SUPABASE_KEY,
