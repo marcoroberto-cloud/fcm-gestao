@@ -1,15 +1,15 @@
 /**
  * Serviço de API unificado:
  * - Em desenvolvimento local (porta 8000), consulta o servidor Python local.
- * - Na Vercel ou produção web, consulta diretamente o Supabase (PostgREST) com altíssima velocidade.
+ * - Na Vercel ou produção web, consulta diretamente o Supabase (PostgREST) com cache em memória e ultra performance.
  */
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://oczagzgosnsprogxymtb.supabase.co";
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_Bih4uz9Nlb_mpaAbY3OqCQ_sIMQ8B4l";
 
-const isCloud = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+const isCloud = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
 
-const LOCAL_API = window.location.origin.includes(':5173')
+const LOCAL_API = typeof window !== 'undefined' && window.location.origin.includes(':5173')
   ? 'http://localhost:8000/api'
   : '/api';
 
@@ -17,6 +17,29 @@ const HEADERS_SUPABASE = {
   apikey: SUPABASE_KEY,
   Authorization: `Bearer ${SUPABASE_KEY}`,
 };
+
+let metadataCache = null;
+let lastMetadataFetch = 0;
+
+async function getMetadata(force = false) {
+  const now = Date.now();
+  if (metadataCache && !force && (now - lastMetadataFetch < 180000)) {
+    return metadataCache;
+  }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/fcm_metadata?select=*&id=eq.1`, {
+      headers: HEADERS_SUPABASE
+    });
+    if (res.ok) {
+      const data = await res.json();
+      metadataCache = data[0] || {};
+      lastMetadataFetch = now;
+    }
+  } catch (err) {
+    console.error("Erro ao carregar metadados da nuvem:", err);
+  }
+  return metadataCache || {};
+}
 
 function normalizeRow(r) {
   if (!r) return r;
@@ -81,14 +104,11 @@ export const apiService = {
         if (res.ok) return await res.json();
       } catch {}
     }
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/fcm_metadata?select=ultima_atualizacao,total_pecas&id=eq.1`, {
-      headers: HEADERS_SUPABASE
-    });
-    const data = await res.json();
+    const meta = await getMetadata();
     return {
       status: "online (Nuvem Supabase)",
-      ultima_atualizacao: data[0]?.ultima_atualizacao || "Online",
-      total_pecas: data[0]?.total_pecas || 0
+      ultima_atualizacao: meta.ultima_atualizacao || "Online",
+      total_pecas: meta.total_pecas || 0
     };
   },
 
@@ -99,11 +119,8 @@ export const apiService = {
         if (res.ok) return await res.json();
       } catch {}
     }
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/fcm_metadata?select=projetos_list&id=eq.1`, {
-      headers: HEADERS_SUPABASE
-    });
-    const data = await res.json();
-    return data[0]?.projetos_list || [];
+    const meta = await getMetadata();
+    return meta.projetos_list || [];
   },
 
   async getSummary(projetos = [], busca = '') {
@@ -116,11 +133,72 @@ export const apiService = {
         if (res.ok) return await res.json();
       } catch {}
     }
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/fcm_metadata?select=summary_geral&id=eq.1`, {
-      headers: HEADERS_SUPABASE
-    });
-    const data = await res.json();
-    return data[0]?.summary_geral || {};
+
+    const meta = await getMetadata();
+    if (projetos.length === 0 && !busca) {
+      return meta.summary_geral || {};
+    }
+
+    // Calcula KPIs dinâmicos para o projeto filtrado na nuvem
+    try {
+      let query = `${SUPABASE_URL}/rest/v1/fcm_unificado?select=origem_tipo,qtd_op,qtd_fabr,env_pintura,ret_pintura,saldo_rua,falta_fabricar,qtd_comprada,qtd_entregue,saldo_falta_entregar,qtd_sc`;
+      
+      if (projetos.length === 1) {
+        query += `&obs_norm=eq.${encodeURIComponent(projetos[0])}`;
+      } else if (projetos.length > 1) {
+        const formatted = encodeURIComponent(`("${projetos.map(p => p.replace(/"/g, '""')).join('","')}")`);
+        query += `&obs_norm=in.${formatted}`;
+      }
+
+      if (busca) {
+        const b = encodeURIComponent(`*${busca.toUpperCase()}*`);
+        query += `&or=(cod_peca.ilike.${b},descricao.ilike.${b})`;
+      }
+
+      const res = await fetch(query, { headers: HEADERS_SUPABASE });
+      if (res.ok) {
+        const items = await res.json();
+        const pcp = items.filter(x => (x.origem_tipo || '').includes('Fabrica') || (x.origem_tipo || '').includes('PCP'));
+        const cmp = items.filter(x => (x.origem_tipo || '').includes('Compra'));
+        const sc  = items.filter(x => (x.origem_tipo || '').includes('SC'));
+
+        const tot_op = pcp.reduce((s, x) => s + (Number(x.qtd_op) || 0), 0);
+        const tot_fab = pcp.reduce((s, x) => s + (Number(x.qtd_fabr) || 0), 0);
+        const tot_env = pcp.reduce((s, x) => s + (Number(x.env_pintura) || 0), 0);
+        const tot_ret = pcp.reduce((s, x) => s + (Number(x.ret_pintura) || 0), 0);
+        const saldo_rua = pcp.reduce((s, x) => s + (Number(x.saldo_rua) || 0), 0);
+        const falta_fab = pcp.reduce((s, x) => s + (Number(x.falta_fabricar) || 0), 0);
+        const falta_env = Math.max(0, tot_fab - tot_env);
+
+        const qtd_comprada = cmp.reduce((s, x) => s + (Number(x.qtd_comprada) || 0), 0);
+        const qtd_entregue = cmp.reduce((s, x) => s + (Number(x.qtd_entregue) || 0), 0);
+        const saldo_compra = cmp.reduce((s, x) => s + (Number(x.saldo_falta_entregar) || 0), 0);
+
+        const tot_sc = sc.reduce((s, x) => s + (Number(x.qtd_sc) || 0), 0);
+
+        return {
+          projeto: projetos.join(', ') || 'Filtro Aplicado',
+          tot_op,
+          tot_fab,
+          tot_env,
+          tot_ret,
+          saldo_rua,
+          falta_fab,
+          falta_env,
+          qtd_comprada,
+          qtd_entregue,
+          saldo_compra,
+          tot_sc,
+          qtd_itens_sc: sc.length,
+          pct_fab: tot_op > 0 ? Math.round((tot_fab / tot_op) * 100) : 0,
+          pct_ret: tot_op > 0 ? Math.round((tot_ret / tot_op) * 100) : 0
+        };
+      }
+    } catch (e) {
+      console.error("Erro ao calcular resumo dos projetos:", e);
+    }
+
+    return meta.summary_geral || {};
   },
 
   async getFornecedores(projetos = [], busca = '') {
@@ -133,11 +211,8 @@ export const apiService = {
         if (res.ok) return await res.json();
       } catch {}
     }
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/fcm_metadata?select=fornecedores_list&id=eq.1`, {
-      headers: HEADERS_SUPABASE
-    });
-    const data = await res.json();
-    return data[0]?.fornecedores_list || [];
+    const meta = await getMetadata();
+    return meta.fornecedores_list || [];
   },
 
   async getDiagnosticoDetalhado(projetos = [], busca = '') {
@@ -150,11 +225,8 @@ export const apiService = {
         if (res.ok) return await res.json();
       } catch {}
     }
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/fcm_metadata?select=diagnostico_detalhado&id=eq.1`, {
-      headers: HEADERS_SUPABASE
-    });
-    const data = await res.json();
-    return data[0]?.diagnostico_detalhado || { na_rua: [], compras_pendentes: [], sc_pendentes: [] };
+    const meta = await getMetadata();
+    return meta.diagnostico_detalhado || { na_rua: [], compras_pendentes: [], sc_pendentes: [] };
   },
 
   async getItems({ tab = 'unificado', projetos = [], busca = '', limit = 100, offset = 0 }) {
@@ -173,14 +245,16 @@ export const apiService = {
 
     let query = `${SUPABASE_URL}/rest/v1/fcm_unificado?select=*`;
 
-    if (projetos.length > 0) {
-      const projsFormatted = projetos.map(p => `"${p}"`).join(',');
-      query += `&obs_norm=in.(${projsFormatted})`;
+    if (projetos.length === 1) {
+      query += `&obs_norm=eq.${encodeURIComponent(projetos[0])}`;
+    } else if (projetos.length > 1) {
+      const formatted = encodeURIComponent(`("${projetos.map(p => p.replace(/"/g, '""')).join('","')}")`);
+      query += `&obs_norm=in.${formatted}`;
     }
 
     if (busca) {
-      const b = encodeURIComponent(busca.toUpperCase());
-      query += `&or=(cod_peca.ilike.*${b}*,descricao.ilike.*${b}*)`;
+      const b = encodeURIComponent(`*${busca.toUpperCase()}*`);
+      query += `&or=(cod_peca.ilike.${b},descricao.ilike.${b})`;
     }
 
     switch (tab) {
@@ -188,7 +262,7 @@ export const apiService = {
         query += '&falta_fabricar_entregar=gt.0';
         break;
       case 'fabricadas':
-        query += '&origem_tipo=eq.PCP/OP';
+        query += '&origem_tipo=ilike.*Fabrica*';
         break;
       case 'retornadas':
         query += '&ret_pintura=gt.0';
@@ -203,7 +277,7 @@ export const apiService = {
         query += '&falta_fabricar=gt.0';
         break;
       case 'compras':
-        query += '&origem_tipo=ilike.*Compras*';
+        query += '&origem_tipo=ilike.*Compra*';
         break;
       case 'sc':
         query += '&origem_tipo=ilike.*SC*';
@@ -211,6 +285,8 @@ export const apiService = {
       default:
         break;
     }
+
+    query += `&order=id.asc`;
 
     if (limit > 0) {
       query += `&limit=${limit}&offset=${offset}`;
@@ -231,7 +307,7 @@ export const apiService = {
 
     const rows = await res.json();
     return {
-      total: isNaN(total) ? rows.length : total,
+      total: isNaN(total) ? (Array.isArray(rows) ? rows.length : 0) : total,
       items: Array.isArray(rows) ? rows.map(normalizeRow) : []
     };
   }
