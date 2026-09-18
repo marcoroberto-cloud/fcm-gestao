@@ -1,16 +1,21 @@
 :root {
-  --bg-main: #0b0f17;
-  --bg-card: #131b2e;
-  --bg-card-hover: #19233c;
-  --bg-panel: #0f1626;
+  --bg-main: #0c1017;
+  --bg-card: #121824;
+  --bg-card-hover: #182234;
+  --bg-panel: #0e1420;
   --border-color: #1e293b;
-  --border-focus: #3b82f6;
+  --border-focus: #FFC72C;
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
 
-  --color-primary: #3b82f6;
-  --color-primary-glow: rgba(59, 130, 246, 0.25);
+  /* Flash Engenharia Corporate Identity */
+  --color-primary: #FFC72C;
+  --color-primary-hover: #FFD54F;
+  --color-primary-glow: rgba(255, 199, 44, 0.28);
+  --color-primary-text: #0c1017;
+  --color-flash-yellow: #FFC72C;
+  --color-flash-navy: #121824;
 
   --color-success: #10b981;
   --color-success-bg: rgba(16, 185, 129, 0.12);
@@ -24,9 +29,9 @@
   --color-danger-bg: rgba(239, 68, 68, 0.12);
   --color-danger-border: rgba(239, 68, 68, 0.3);
 
-  --color-info: #06b6d4;
-  --color-info-bg: rgba(6, 182, 212, 0.12);
-  --color-info-border: rgba(6, 182, 212, 0.3);
+  --color-info: #38bdf8;
+  --color-info-bg: rgba(56, 189, 248, 0.12);
+  --color-info-border: rgba(56, 189, 248, 0.3);
 
   --color-purple: #8b5cf6;
   --color-purple-bg: rgba(139, 92, 246, 0.12);
@@ -60,8 +65,8 @@ code, .font-mono {
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg-main); }
-::-webkit-scrollbar-thumb { background: #25334d; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #334668; }
+::-webkit-scrollbar-thumb { background: #222d42; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #32415d; }
 
 /* Layout */
 .app-container { display: flex; flex-direction: column; min-height: 100vh; }
@@ -71,34 +76,60 @@ code, .font-mono {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(15, 22, 38, 0.9);
+  background: rgba(18, 24, 38, 0.95);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border-color);
-  padding: 12px 24px;
+  padding: 10px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
-.brand-section { display: flex; align-items: center; gap: 12px; }
+.brand-section { display: flex; align-items: center; gap: 14px; }
 
-.brand-logo {
-  font-size: 28px;
-  background: linear-gradient(135deg, #1e293b, #0f172a);
-  border: 1px solid #334155;
-  border-radius: var(--radius-md);
-  padding: 6px 10px;
-  box-shadow: var(--shadow-sm);
+.brand-logo-img {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+  transition: transform 0.2s ease;
+}
+.brand-logo-img:hover {
+  transform: scale(1.03);
+}
+
+.brand-divider {
+  width: 1px;
+  height: 34px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.brand-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 2px;
 }
 
 .brand-info h1 {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  background: linear-gradient(90deg, #ffffff, #cbd5e1);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+}
+
+.brand-tag {
+  background: rgba(255, 199, 44, 0.12);
+  color: var(--color-flash-yellow);
+  border: 1px solid rgba(255, 199, 44, 0.35);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
 }
 
 .brand-info p { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
@@ -149,14 +180,15 @@ code, .font-mono {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: white;
-  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+  background: linear-gradient(135deg, #FFC72C, #F59E0B);
+  color: #0c1017;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(255, 199, 44, 0.35);
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: linear-gradient(135deg, #FFD54F, #FFC72C);
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
+  box-shadow: 0 4px 14px rgba(255, 199, 44, 0.5);
 }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
@@ -248,9 +280,9 @@ code, .font-mono {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: #1e293b;
-  border: 1px solid #334155;
-  color: #38bdf8;
+  background: rgba(255, 199, 44, 0.12);
+  border: 1px solid rgba(255, 199, 44, 0.35);
+  color: var(--color-flash-yellow);
   font-size: 0.77rem;
   font-weight: 600;
   padding: 3px 8px;
@@ -260,9 +292,9 @@ code, .font-mono {
 .multiselect-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .chips-more-btn {
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.35);
-  color: #60a5fa;
+  background: rgba(255, 199, 44, 0.15);
+  border: 1px solid rgba(255, 199, 44, 0.35);
+  color: var(--color-flash-yellow);
   font-size: 0.73rem;
   font-weight: 700;
   padding: 3px 9px;
@@ -271,11 +303,11 @@ code, .font-mono {
   white-space: nowrap;
   transition: background 0.15s;
 }
-.chips-more-btn:hover { background: rgba(59, 130, 246, 0.25); }
+.chips-more-btn:hover { background: rgba(255, 199, 44, 0.25); }
 
 .chips-count-badge {
-  background: #3b82f6;
-  color: white;
+  background: var(--color-flash-yellow);
+  color: #0c1017;
   font-size: 0.68rem;
   font-weight: 800;
   padding: 1px 6px;
@@ -321,15 +353,15 @@ code, .font-mono {
 }
 
 .dropdown-toolbar-btn {
-  background: transparent; border: none; color: #38bdf8;
+  background: transparent; border: none; color: var(--color-flash-yellow);
   cursor: pointer; font-weight: 600; font-size: 0.78rem;
 }
 .dropdown-toolbar-btn:hover { text-decoration: underline; }
 
 .dropdown-ok-btn {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: #ffffff;
-  border: 1px solid #3b82f6;
+  background: linear-gradient(135deg, #FFC72C, #F59E0B);
+  color: #0c1017;
+  border: 1px solid #FFC72C;
   border-radius: 6px;
   padding: 4px 12px;
   font-size: 0.78rem;
@@ -338,13 +370,13 @@ code, .font-mono {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 2px 6px rgba(255, 199, 44, 0.35);
   transition: all 0.15s ease;
 }
 .dropdown-ok-btn:hover {
-  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  background: linear-gradient(135deg, #FFD54F, #FFC72C);
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.5);
+  box-shadow: 0 4px 10px rgba(255, 199, 44, 0.5);
 }
 .dropdown-ok-btn:active {
   transform: translateY(0);
@@ -368,8 +400,8 @@ code, .font-mono {
   transition: background 0.15s ease;
 }
 .dropdown-item:hover { background: #1e293b; color: #ffffff; }
-.dropdown-item.selected { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-.dropdown-item input[type="checkbox"] { accent-color: #3b82f6; width: 15px; height: 15px; cursor: pointer; }
+.dropdown-item.selected { background: rgba(255, 199, 44, 0.12); color: var(--color-flash-yellow); }
+.dropdown-item input[type="checkbox"] { accent-color: var(--color-flash-yellow); width: 15px; height: 15px; cursor: pointer; }
 
 .dropdown-item-title {
   flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -395,7 +427,7 @@ code, .font-mono {
 }
 .search-input:focus {
   outline: none; border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-glow); background: #162035;
+  box-shadow: 0 0 0 3px var(--color-primary-glow); background: #182234;
 }
 
 .suggestions-box {
@@ -490,12 +522,18 @@ code, .font-mono {
   border: 1px solid transparent; color: var(--text-secondary);
   font-size: 0.86rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s ease;
 }
-.tab-btn:hover { background: #141c2e; color: var(--text-primary); }
-.tab-btn.active { background: #1e293b; color: #38bdf8; border-color: #334155; box-shadow: var(--shadow-sm); }
+.tab-btn:hover { background: #162032; color: var(--text-primary); }
+.tab-btn.active {
+  background: rgba(255, 199, 44, 0.12);
+  color: var(--color-flash-yellow);
+  border-color: rgba(255, 199, 44, 0.4);
+  box-shadow: 0 0 14px rgba(255, 199, 44, 0.15);
+}
 
 .tab-badge {
-  background: #0f172a; padding: 2px 7px; border-radius: 999px;
-  font-size: 0.71rem; font-weight: 700; border: 1px solid #334155;
+  background: #0e1420; padding: 2px 7px; border-radius: 999px;
+  font-size: 0.71rem; font-weight: 700; border: 1px solid rgba(255, 199, 44, 0.35);
+  color: var(--color-flash-yellow);
 }
 
 /* ── FLOW DIAGRAM ── */

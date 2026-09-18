@@ -621,10 +621,19 @@ export default function App() {
       {/* ── TOP NAVBAR ── */}
       <header className="top-nav">
         <div className="brand-section">
-          <div className="brand-logo">🏭</div>
+          <img 
+            src="/logo_flash_trans.png" 
+            alt="Grupo Flash Engenharia" 
+            className="brand-logo-img"
+            onError={(e) => { e.currentTarget.src = '/logo_flash.png'; }}
+          />
+          <div className="brand-divider" />
           <div className="brand-info">
-            <h1>FCM Metálicos | Gestão Integrada</h1>
-            <p>Controle Executivde Romaneio, PCP, Compras e TratamentExterno</p>
+            <div className="brand-title-row">
+              <h1>FCM Metálicos</h1>
+              <span className="brand-tag">Gestão Integrada</span>
+            </div>
+            <p>Controle Executivo de Romaneio, PCP, Compras e Tratamento Externo</p>
           </div>
         </div>
 
