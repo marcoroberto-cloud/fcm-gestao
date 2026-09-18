@@ -1,0 +1,17 @@
+{
+  "name": "FCM Metálicos - Gestão Integrada",
+  "short_name": "FCM Gestão",
+  "description": "Painel de Gestão Integrada PCP, Romaneio, Compras e SC",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07090e",
+  "theme_color": "#0f1422",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

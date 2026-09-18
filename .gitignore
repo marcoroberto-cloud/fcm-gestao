@@ -1,0 +1,25 @@
+# Ambientes e dependências
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+__pycache__/
+*.pyc
+
+# Dados locais e planilhas confidenciais da empresa (NUNCA sobem para o GitHub)
+dados_compartilhados/
+*.parquet
+*.xlsx
+*.xlsm
+*.csv
+
+# Chaves e variáveis locais
+.env
+.env.local
+*.log
+
+# Backups e temporários
+historico_backups/
+*.tmp
+.DS_Store
+Thumbs.db
